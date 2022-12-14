@@ -3,9 +3,44 @@ from . import *
 
 app = Commander(name)
 
+# icon + name
+info_string = "ℹ️ [bold cyan]提示[/]"
+error_string = "❌ [bold red]错误[/]"
+warning_string = "⚠️ [bold yellow]警告[/]"
+
 
 api_url = "https://api.themoviedb.org/3"
 img_url = "https://image.tmdb.org/t/p/original"
+
+# 影片类型对应icon
+
+class_to_icon = {
+    "爱情": "❤️",
+    "动作": "🔫",
+    "喜剧": "😂",
+    "科幻": "👽",
+    "动画": "🐱",
+    "剧情": "🎭",
+    "惊悚": "👻",
+    "恐怖": "👹",
+    "犯罪": "👮",
+    "悬疑": "🕵️",
+    "冒险": "🏃",
+    "战争": "⚔️",
+    "奇幻": "🧙",
+    "家庭": "👨‍👩‍👧‍👦",
+    "歌舞": "🎤",
+    "传记": "📖",
+    "历史": "📜",
+    "运动": "🏀",
+    "西部": "🤠",
+    "古装": "👳",
+    "武侠": "👊",
+    "黑色电影": "🖤",
+    "短片": "🎞️",
+    "纪录片": "📽️",
+    "其他": "🔖",
+}
 
 
 @app.custom_complete("type")
@@ -36,21 +71,22 @@ def top(type: str = "all", time: str = "day"):
     """
     import requests
 
-    res = requests.get(
-        f"{api_url}/trending/{type}/{time}",
-        params={"api_key": config.select("token"), "language": user_lang},
-    )
+    with QproDefaultConsole.status("正在获取数据"):
+        res = requests.get(
+            f"{api_url}/trending/{type}/{time}",
+            params={"api_key": config.select("token"), "language": user_lang},
+        )
     if res.status_code != 200:
-        raise Exception("Error")
+        QproDefaultConsole.print(error_string, "获取数据失败")
+        return
     import json
 
     res = json.loads(res.text)
 
     from QuickStart_Rhy.TuiTools.Table import qs_default_table
-    from QuickStart_Rhy import table_cell
 
     table = qs_default_table(
-        ["序号", "名称", "类型", "流行指标", "平均评分", "发布日期", {"header": "简介", "justify": "left"}],
+        ["序号", "名称", "类型", "流行指标", "平均评分", "发布日期"],
         "[bold]🔥 TMDB 热门[/]\n",
     )
 
@@ -58,10 +94,10 @@ def top(type: str = "all", time: str = "day"):
         i = {j: str(i[j]) for j in i}
         table.add_row(
             *[
-                str(_id + 1),
+                f"[bold cyan]{_id + 1}[/]",
                 i["title"] if i["media_type"] == "movie" else i["name"],
                 "电影" if i["media_type"] == "movie" else "剧集",
-                "[bold cyan]" + i["popularity"] + "[/]",
+                "[bold magenta]" + i["popularity"] + "[/]",
                 "[bold cyan]" + i["vote_average"] + "[/]",
                 "[bold yellow]"
                 + (
@@ -70,7 +106,6 @@ def top(type: str = "all", time: str = "day"):
                     else i["first_air_date"]
                 )
                 + "[/]",
-                table_cell(i["overview"], QproDefaultConsole.width // 2),
             ]
         )
 
@@ -79,25 +114,28 @@ def top(type: str = "all", time: str = "day"):
     while True:
         QproDefaultConsole.print(table, justify="center")
 
-        _id = int(
-            _ask(
-                {
-                    "type": "input",
-                    "message": "输入序号查看详情 (输入 0 退出):",
-                    "validate": lambda x: x.isdigit()
-                    and 0 <= int(x) <= len(res["results"]),
-                }
-            )
+        _id = _ask(
+            {
+                "type": "input",
+                "message": "输入序号查看详情 (q 退出):",
+                "validate": lambda x: x == "q"
+                or (x.isdigit() and 0 < int(x) <= len(res["results"])),
+            }
         )
 
-        if _id == 0:
+        if _id == "q":
             break
+        _id = int(_id) - 1
+
+        QproDefaultConsole.clear()
 
         app.real_call(
             "info",
-            res["results"][_id - 1]["media_type"],
-            res["results"][_id - 1]["id"],
+            res["results"][_id]["media_type"],
+            res["results"][_id]["id"],
         )
+
+        QproDefaultConsole.clear()
 
 
 @app.custom_complete("type")
@@ -118,20 +156,24 @@ def info(type: str = "movie", id: int = 0):
     """
     import requests
 
-    res = requests.get(
-        f"{api_url}/{type}/{id}",
-        params={"api_key": config.select("token"), "language": user_lang},
-    )
+    with QproDefaultConsole.status("正在获取数据"):
+        res = requests.get(
+            f"{api_url}/{type}/{id}",
+            params={"api_key": config.select("token"), "language": user_lang},
+        )
     if res.status_code != 200:
-        raise Exception("Error")
+        QproDefaultConsole.print(error_string, "获取数据失败")
+        return
     import json
 
     res = json.loads(res.text)
 
     from QuickStart_Rhy.ImageTools.ImagePreview import image_preview
     from QuickStart_Rhy.TuiTools.Table import qs_default_table
+    from QuickStart_Rhy import table_cell
 
-    image_preview(f"{img_url}{res['backdrop_path']}")
+    with QproDefaultConsole.status("正在获取并展示图片") as st:
+        image_preview(f"{img_url}{res['backdrop_path']}", qs_console_status=st)
 
     table = qs_default_table(
         ["字段", {"header": "值", "justify": "left"}],
@@ -148,12 +190,29 @@ def info(type: str = "movie", id: int = 0):
             f"[underline dim]{res['tagline']}[/]", justify="center"
         )
 
-    QproDefaultConsole.print("\n" + res["overview"], end="\n\n")
+    QproDefaultConsole.print()
+
+    table.add_row(
+        "🏠 影片简介",
+        table_cell(res["overview"], QproDefaultConsole.width - 20),
+    )
 
     if type == "movie":
         table.add_row(
             "🏷 ️ 影片类型",
-            ", ".join(["[underline]" + i["name"] + "[/]" for i in res["genres"]]),
+            ", ".join(
+                [
+                    "[underline]"
+                    + (
+                        class_to_icon[i["name"]] + " "
+                        if i["name"] in class_to_icon
+                        else ""
+                    )
+                    + i["name"]
+                    + "[/]"
+                    for i in res["genres"]
+                ]
+            ),
         )
         table.add_row("🔥 ️流行指标", f"[bold magenta]{res['popularity']}[/]")
         table.add_row(
@@ -168,7 +227,19 @@ def info(type: str = "movie", id: int = 0):
     else:
         table.add_row(
             "🏷 ️ 剧集类型",
-            ", ".join(["[underline]" + i["name"] + "[/]" for i in res["genres"]]),
+            ", ".join(
+                [
+                    "[underline]"
+                    + (
+                        class_to_icon[i["name"]] + " "
+                        if i["name"] in class_to_icon
+                        else ""
+                    )
+                    + i["name"]
+                    + "[/]"
+                    for i in res["genres"]
+                ]
+            ),
         )
         table.add_row("🔥 ️流行指标", f"[bold magenta]{res['popularity']}[/]")
         table.add_row(
@@ -187,6 +258,21 @@ def info(type: str = "movie", id: int = 0):
                 ),
             )
     QproDefaultConsole.print(table, justify="center")
+
+    from . import _ask
+
+    # 前往官网查看
+
+    if _ask(
+        {
+            "type": "confirm",
+            "message": "前往官网查看?",
+            "default": False,
+        }
+    ):
+        from QuickStart_Rhy import open_url
+
+        open_url([f"https://www.themoviedb.org/{type}/{id}"])
 
 
 def main():
