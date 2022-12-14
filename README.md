@@ -5,7 +5,7 @@ A Commander APP for TMDB
 ## Install
 
 ```shell
-pip3 install tmdb -U
+pip3 install git+https://github.com/Rhythmicc/tmdb.git -U
 ```
 
 ## Usage
