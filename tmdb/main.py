@@ -30,6 +30,9 @@ def top():
 def top(type: str = "all", time: str = "day"):
     """
     获取热门电影
+
+    :param type: 类型
+    :param time: 时间
     """
     import requests
 
@@ -109,6 +112,9 @@ def info():
 def info(type: str = "movie", id: int = 0):
     """
     获取电影信息
+
+    :param type: 类型
+    :param id: ID
     """
     import requests
 
