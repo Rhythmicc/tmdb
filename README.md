@@ -6,6 +6,7 @@ A Commander APP for TMDB
 
 ```shell
 pip3 install git+https://github.com/Rhythmicc/tmdb.git -U
+pip3 install git+https://gitee.com/RhythmLian/tmdb.git -U
 ```
 
 ## Usage
