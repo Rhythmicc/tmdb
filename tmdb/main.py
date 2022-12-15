@@ -3,11 +3,6 @@ from . import *
 
 app = Commander(name)
 
-# icon + name
-info_string = "ℹ️ [bold cyan]提示[/]"
-error_string = "❌ [bold red]错误[/]"
-warning_string = "⚠️ [bold yellow]警告[/]"
-
 
 api_url = "https://api.themoviedb.org/3"
 img_url = "https://image.tmdb.org/t/p/original"
@@ -260,6 +255,37 @@ def info(type: str = "movie", id: int = 0):
     QproDefaultConsole.print(table, justify="center")
 
     from . import _ask
+
+    # 查看剧照
+
+    if _ask(
+        {
+            "type": "confirm",
+            "message": "查看剧照?",
+            "default": True,
+        }
+    ):
+        with QproDefaultConsole.status("正在获取数据"):
+            res = requests.get(
+                f"{api_url}/{type}/{id}/images",
+                params={"api_key": config.select("token")},
+            )
+        if res.status_code != 200:
+            QproDefaultConsole.print(error_string, "获取数据失败")
+            return
+        import json
+
+        res = json.loads(res.text)
+
+        from QuickStart_Rhy.NetTools.MultiSingleDL import multi_single_dl_content_ls
+
+        image_preview(
+            imgsConcat(
+                multi_single_dl_content_ls(
+                    [f"{img_url}{i['file_path']}" for i in res["backdrops"][:12]]
+                )
+            )
+        )
 
     # 前往官网查看
 

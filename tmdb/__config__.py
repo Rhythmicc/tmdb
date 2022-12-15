@@ -11,7 +11,7 @@ questions = {
         "message": "Please input your TMDb token:"
         if user_lang != "zh"
         else "请输入您的TMDb令牌:",
-    },
+    }
 }
 
 
