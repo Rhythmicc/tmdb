@@ -78,12 +78,6 @@ def imgsConcat(imgs: list):
     合并图片
     """
 
-    def is_wide():
-        width = QproDefaultConsole.width
-        height = QproDefaultConsole.height
-        rate = width / height
-        return rate > 2
-
     from io import BytesIO
 
     terminal_font_size = int(
@@ -97,27 +91,38 @@ def imgsConcat(imgs: list):
         QproDefaultConsole.print(error_string, "样品图获取失败!")
         return
 
-    wide = is_wide()
-    heights_len = 4 if wide else 3
     with QproDefaultConsole.status("拼接图片中") as st:
-        one_width = QproDefaultConsole.width // heights_len * terminal_font_size
+        heights_len = 3
+        one_width = int(
+            QproDefaultConsole.width / heights_len * terminal_font_size / 2.125
+        )
+
+        heights = [0] * heights_len
+        for i in imgs:
+            one_height = int(one_width * i.size[1] / i.size[0])
+            heights[heights.index(min(heights))] += one_height
+
+        st.update("嗅探最佳拼接方式")
+        max_height = QproDefaultConsole.height * terminal_font_size
+
+        while max(heights) > max_height:
+            heights_len += 1
+            heights = [0] * heights_len
+            one_width = int(
+                QproDefaultConsole.width / heights_len * terminal_font_size / 2.125
+            )
+            for i in imgs:
+                one_height = int(one_width * i.size[1] / i.size[0])
+                heights[heights.index(min(heights))] += one_height
+
+        result = Image.new("RGBA", (one_width * heights_len, max(heights)))
+        heights = [0] * heights_len
+
         imgs = [
             i.resize((one_width, int(one_width * i.size[1] / i.size[0]))) for i in imgs
         ]
         imgs = sorted(imgs, key=lambda i: -i.size[0] * i.size[1])
-        heights = [0] * heights_len
-        for i in imgs:
-            heights[heights.index(min(heights))] += i.size[1]
-        if wide:
-            st.update("嗅探最佳拼接方式")
-            while max(heights) > one_width * heights_len:
-                heights_len += 1
-                heights = [0] * heights_len
-                one_width = QproDefaultConsole.width // heights_len * terminal_font_size
-                for i in imgs:
-                    heights[heights.index(min(heights))] += i.size[1]
-        result = Image.new("RGBA", (one_width * heights_len, max(heights)))
-        heights = [0] * heights_len
+
         for i in imgs:
             min_height_index = heights.index(min(heights))
             result.paste(i, (one_width * min_height_index, heights[min_height_index]))

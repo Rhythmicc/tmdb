@@ -35,6 +35,8 @@ class_to_icon = {
     "短片": "🎞️",
     "纪录片": "📽️",
     "其他": "🔖",
+    "动作冒险": "🔫🏃",
+    "Sci-Fi & Fantasy": "👽🧙",
 }
 
 
@@ -299,6 +301,155 @@ def info(type: str = "movie", id: int = 0):
         from QuickStart_Rhy import open_url
 
         open_url([f"https://www.themoviedb.org/{type}/{id}"])
+
+
+@app.command()
+def search():
+    """
+    搜索电影或剧集
+    """
+    from . import _ask
+
+    keywords = _ask(
+        {
+            "type": "input",
+            "message": "请输入关键词",
+        }
+    )
+
+    if not keywords:
+        return
+
+    import requests
+
+    with QproDefaultConsole.status("正在获取数据"):
+        res = requests.get(
+            f"{api_url}/search/multi",
+            params={
+                "api_key": config.select("token"),
+                "query": keywords,
+                "language": user_lang,
+            },
+        )
+
+    if res.status_code != 200:
+        QproDefaultConsole.print(error_string, "获取数据失败")
+        return
+
+    import json
+
+    res = json.loads(res.text)
+
+    if not res["results"]:
+        QproDefaultConsole.print(warning_string, "未找到相关内容")
+        return
+
+    from QuickStart_Rhy.TuiTools.Table import qs_default_table
+    from QuickStart_Rhy.ImageTools.ImagePreview import image_preview
+
+    table = qs_default_table(
+        ["序号", "类型", "标题", "评分", "日期"],
+        "🔍 搜索结果\n",
+    )
+
+    actors = []
+    items = []
+    index = 1
+
+    # QproDefaultConsole.print(res["results"])
+
+    for item in res["results"]:
+        item = {
+            i: item[i]
+            if isinstance(item[i], list) or isinstance(item[i], dict)
+            else str(item[i])
+            for i in item
+            if item[i]
+        }
+        if item["media_type"] in ["movie", "tv"]:
+            table.add_row(
+                f"[bold cyan]{index}[/]",
+                "电影" if item["media_type"] == "movie" else "剧集",
+                item["title"] if item["media_type"] == "movie" else item["name"],
+                f"[bold cyan]{item['vote_average']}[/] | [bold cyan]{item['vote_count']}[/]"
+                if "vote_average" in item
+                else "",
+                "[bold yellow]"
+                + (
+                    item["release_date"]
+                    if item["media_type"] == "movie" and "release_date" in item
+                    else item["first_air_date"]
+                    if "first_air_date" in item
+                    else ""
+                )
+                + "[/]",
+            )
+            items.append(item)
+            if "poster_path" in item:
+                actors.append(f"{img_url}{item['poster_path']}")
+            index += 1
+        else:  # 人物
+            actors.append(f"{img_url}{item['profile_path']}")
+            for _item in item["known_for"]:
+                _item = {
+                    i: _item[i]
+                    if isinstance(_item[i], list) or isinstance(_item[i], dict)
+                    else str(_item[i])
+                    for i in _item
+                    if _item[i]
+                }
+                table.add_row(
+                    f"[bold cyan]{index}[/]",
+                    "电影" if _item["media_type"] == "movie" else "剧集",
+                    _item["title"] if _item["media_type"] == "movie" else _item["name"],
+                    f"[bold cyan]{_item['vote_average']}[/] | [bold cyan]{_item['vote_count']}[/]"
+                    if "vote_average" in _item
+                    else "",
+                    "[bold yellow]"
+                    + (
+                        _item["release_date"]
+                        if _item["media_type"] == "movie" and "release_date" in _item
+                        else _item["first_air_date"]
+                        if "first_air_date" in _item
+                        else ""
+                    )
+                    + "[/]",
+                )
+                items.append(_item)
+                if "poster_path" in _item:
+                    actors.append(f"{img_url}{_item['poster_path']}")
+                index += 1
+
+    if actors:
+        from QuickStart_Rhy.NetTools.MultiSingleDL import multi_single_dl_content_ls
+
+        img = imgsConcat(multi_single_dl_content_ls(actors))
+
+    while True:
+        if actors:
+            image_preview(img)
+        QproDefaultConsole.print(table, justify="center")
+
+        _id = _ask(
+            {
+                "type": "input",
+                "message": "请输入ID (q退出)",
+                "validate": lambda val: val.isdigit()
+                and 0 < int(val) < index
+                or val == "q",
+            }
+        )
+
+        if _id == "q":
+            break
+
+        _id = int(_id) - 1
+
+        QproDefaultConsole.clear()
+        app.real_call(
+            "info", res["results"][_id]["media_type"], res["results"][_id]["id"]
+        )
+        QproDefaultConsole.clear()
 
 
 def main():
