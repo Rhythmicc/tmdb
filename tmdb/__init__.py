@@ -92,9 +92,10 @@ def imgsConcat(imgs: list):
         return
 
     with QproDefaultConsole.status("拼接图片中") as st:
-        heights_len = 3
+        heights_len = min(len(imgs), 3)
+
         one_width = int(
-            QproDefaultConsole.width / heights_len * terminal_font_size / 2.125
+            QproDefaultConsole.width * terminal_font_size / heights_len / 2.125
         )
 
         heights = [0] * heights_len
@@ -105,7 +106,7 @@ def imgsConcat(imgs: list):
         st.update("嗅探最佳拼接方式")
         max_height = QproDefaultConsole.height * terminal_font_size
 
-        while max(heights) > max_height:
+        while max(heights) > max_height and heights_len < len(imgs):
             heights_len += 1
             heights = [0] * heights_len
             one_width = int(
