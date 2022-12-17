@@ -249,7 +249,10 @@ def info(type: str = "movie", id: int = 0):
                 "🗒️  剧集季数",
                 "\n".join(
                     [
-                        f"【{i['air_date']}】{i['name']}: {i['overview']}"
+                        table_cell(
+                            f"【{i['air_date']}】{i['name']}: {i['overview']}",
+                            QproDefaultConsole.width - 20,
+                        )
                         for i in res["seasons"]
                     ]
                 ),
@@ -441,6 +444,7 @@ def search():
         )
 
         if _id == "q":
+            QproDefaultConsole.clear()
             break
 
         _id = int(_id) - 1
