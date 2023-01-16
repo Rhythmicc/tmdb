@@ -9,7 +9,7 @@ if enable_config:
     config = tmdbConfig()
 
 import sys
-from QuickProject import user_pip, _ask, external_exec
+from QuickProject import user_pip, _ask, external_exec, QproDefaultStatus
 
 
 info_string = "ℹ️ [bold cyan]提示[/]"
@@ -50,9 +50,7 @@ def requirePackage(
                 "default": True,
             }
         ):
-            with QproDefaultConsole.status(
-                "Installing..." if user_lang != "zh" else "正在安装..."
-            ):
+            with QproDefaultStatus("Installing..." if user_lang != "zh" else "正在安装..."):
                 external_exec(
                     f"{set_pip} install {pname if not real_name else real_name} -U",
                     True,
@@ -91,7 +89,11 @@ def imgsConcat(imgs: list):
         QproDefaultConsole.print(error_string, "样品图获取失败!")
         return
 
-    with QproDefaultConsole.status("拼接图片中") as st:
+    if not imgs:
+        QproDefaultConsole.print(error_string, "无样品图")
+        return
+
+    with QproDefaultStatus("拼接图片中") as st:
         heights_len = min(len(imgs), 3)
 
         one_width = int(

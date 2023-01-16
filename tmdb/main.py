@@ -68,7 +68,7 @@ def top(type: str = "all", time: str = "day"):
     """
     import requests
 
-    with QproDefaultConsole.status("正在获取数据"):
+    with QproDefaultStatus("正在获取数据"):
         res = requests.get(
             f"{api_url}/trending/{type}/{time}",
             params={"api_key": config.select("token"), "language": user_lang},
@@ -153,7 +153,7 @@ def info(type: str = "movie", id: int = 0):
     """
     import requests
 
-    with QproDefaultConsole.status("正在获取数据"):
+    with QproDefaultStatus("正在获取数据"):
         res = requests.get(
             f"{api_url}/{type}/{id}",
             params={"api_key": config.select("token"), "language": user_lang},
@@ -169,8 +169,8 @@ def info(type: str = "movie", id: int = 0):
     from QuickStart_Rhy.TuiTools.Table import qs_default_table
     from QuickStart_Rhy import table_cell
 
-    with QproDefaultConsole.status("正在获取并展示图片") as st:
-        image_preview(f"{img_url}{res['backdrop_path']}", qs_console_status=st)
+    with QproDefaultStatus("正在获取并展示图片"):
+        image_preview(f"{img_url}{res['backdrop_path']}")
 
     table = qs_default_table(
         ["字段", {"header": "值", "justify": "left"}],
@@ -270,7 +270,7 @@ def info(type: str = "movie", id: int = 0):
             "default": True,
         }
     ):
-        with QproDefaultConsole.status("正在获取数据"):
+        with QproDefaultStatus("正在获取数据"):
             res = requests.get(
                 f"{api_url}/{type}/{id}/images",
                 params={"api_key": config.select("token")},
@@ -325,7 +325,7 @@ def search():
 
     import requests
 
-    with QproDefaultConsole.status("正在获取数据"):
+    with QproDefaultStatus("正在获取数据"):
         res = requests.get(
             f"{api_url}/search/multi",
             params={
@@ -358,8 +358,6 @@ def search():
     actors = []
     items = []
     index = 1
-
-    # QproDefaultConsole.print(res["results"])
 
     for item in res["results"]:
         item = {
