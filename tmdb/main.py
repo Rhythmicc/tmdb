@@ -390,8 +390,11 @@ def search():
                 actors.append(f"{img_url}{item['poster_path']}")
             index += 1
         else:  # 人物
+            # QproDefaultConsole.print(item)
+            if 'profile_path' not in item:
+                continue
             actors.append(f"{img_url}{item['profile_path']}")
-            for _item in item["known_for"]:
+            for _item in item.get('known_for', []):
                 _item = {
                     i: _item[i]
                     if isinstance(_item[i], list) or isinstance(_item[i], dict)
@@ -417,8 +420,8 @@ def search():
                     + "[/]",
                 )
                 items.append(_item)
-                if "poster_path" in _item:
-                    actors.append(f"{img_url}{_item['poster_path']}")
+                # if "poster_path" in _item:
+                #     actors.append(f"{img_url}{_item['poster_path']}")
                 index += 1
 
     if actors:
@@ -449,7 +452,7 @@ def search():
 
         QproDefaultConsole.clear()
         app.real_call(
-            "info", res["results"][_id]["media_type"], res["results"][_id]["id"]
+            "info", items[_id]["media_type"], items[_id]["id"]
         )
         QproDefaultConsole.clear()
 
