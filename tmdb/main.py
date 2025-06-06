@@ -283,6 +283,7 @@ def info(type: str = "movie", id: int = 0):
         res = json.loads(res.text)
 
         from QuickStart_Rhy.NetTools.MultiSingleDL import multi_single_dl_content_ls
+        from QuickStart_Rhy.ImageTools.ImageTools import imgsConcat
 
         image_preview(
             imgsConcat(
@@ -426,6 +427,7 @@ def search():
 
     if actors:
         from QuickStart_Rhy.NetTools.MultiSingleDL import multi_single_dl_content_ls
+        from QuickStart_Rhy.ImageTools.ImageTools import imgsConcat
 
         img = imgsConcat(multi_single_dl_content_ls(actors))
 
